@@ -4,6 +4,7 @@ dotenv.config();
 const express = require('express');
 
 const postRoutes = require('./routes/postRoutes.js');
+const commentRoutes = require('./routes/commentRoutes.js');
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use(cors({
 app.use(express.json());
 
 app.use('/api/post', postRoutes);
+app.use('/api/comment', commentRoutes);
 
 
 app.use(express.static('src/public'));

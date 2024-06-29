@@ -1,7 +1,5 @@
 const express = require('express');
-
 const postController = require('../controllers/postController.js');
-
 const router = express.Router();
 
 const path = require("path");

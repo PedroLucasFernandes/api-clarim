@@ -1,7 +1,7 @@
 const pool = require('../config/database.js');
 
 const postModel = {
-    async createPost(title, banner, description, content, type, sport, created_by, updated_by, additionalImages) {
+    async createPost(title, image_path, description, content, type, sport, created_by, updated_by, tags, additionalImages) {
         const client = await pool.connect();
         try {
             await client.query('BEGIN');
@@ -13,38 +13,52 @@ const postModel = {
             const postValues = [title, description, content, type, sport, created_by, updated_by];
             const postResult = await client.query(postQuery, postValues);
             const post = postResult.rows[0];
-
-            const images = [];
-
-            const bannerQuery = `
-                INSERT INTO image (post_id, image_path, is_banner) 
-                VALUES ($1, $2, $3) RETURNING *
-            `;
-            const bannerValues = [post.id, banner, true];
-            const bannerResult = await client.query(bannerQuery, bannerValues);
-            images.push(bannerResult.rows[0]);
-
-            for (const image_path of additionalImages) {
-                const imageQuery = `
-                    INSERT INTO image (post_id, image_path, is_banner) 
-                    VALUES ($1, $2, $3) RETURNING *
-                `;
-                const imageValues = [post.id, image_path, false];
-                const imageResult = await client.query(imageQuery, imageValues);
-                images.push(imageResult.rows[0]);
-            }
-
+    
+            const imageQueries = [
+                {
+                    text: 'INSERT INTO image (post_id, image_path, is_banner) VALUES ($1, $2, $3) RETURNING *',
+                    values: [post.id, image_path, true]
+                },
+                ...additionalImages.map(img => ({
+                    text: 'INSERT INTO image (post_id, image_path, is_banner) VALUES ($1, $2, $3) RETURNING *',
+                    values: [post.id, img, false]
+                }))
+            ];
+    
+            const imageResults = await Promise.all(imageQueries.map(q => client.query(q)));
+            const images = imageResults.map(result => result.rows[0]);
+    
+            const tagIds = await Promise.all(tags.map(async (tag) => {
+                const tagQuery = 'SELECT id FROM tag WHERE name = $1';
+                const tagResult = await client.query(tagQuery, [tag]);
+                if (tagResult.rows.length > 0) {
+                    return tagResult.rows[0].id;
+                } else {
+                    const insertTagQuery = 'INSERT INTO tag (name) VALUES ($1) RETURNING id';
+                    const insertTagResult = await client.query(insertTagQuery, [tag]);
+                    return insertTagResult.rows[0].id;
+                }
+            }));
+    
+            const postTagQueries = tagIds.map(tagId => ({
+                text: 'INSERT INTO post_tag (post_id, tag_id) VALUES ($1, $2) RETURNING *',
+                values: [post.id, tagId]
+            }));
+    
+            const postTagResults = await Promise.all(postTagQueries.map(q => client.query(q)));
+            const insertedPostTags = postTagResults.map(result => result.rows[0]);
+    
             await client.query('COMMIT');
-
-            return { post, images };
+    
+            return { post, images, tags: insertedPostTags };
         } catch (error) {
             await client.query('ROLLBACK');
-            console.error(`${error.message}`);
+            console.error('Error creating post:', error);
             throw error;
         } finally {
             client.release();
         }
-    },
+    },      
 
     async getPost() {
         const query = `SELECT * FROM post`;

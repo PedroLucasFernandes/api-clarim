@@ -1,16 +1,13 @@
 const postModel = require('../models/postModel.js');
 
 const postService = {
-    async createPost(title, banner, description, content, type, sport, created_by, updated_by, additionalImages) {
+    async createPost(title, banner, description, content, type, sport, created_by, updated_by, tags, additionalImages) {
         try {
-            const existingPostTitle = await postModel.getPostByTitle(title);
-            if(existingPostTitle) {
-                throw new Error(`service: post com o título ${title} já existe`);
-            }
-            const newPost = await postModel.createPost(title, banner, description, content, type, sport, created_by, updated_by, additionalImages);
-            return newPost;
+            const { post, images, tags: addedTags } = await postModel.createPost(title, banner, description, content, type, sport, created_by, updated_by, tags, additionalImages);
+            
+            return { post, images, tags: addedTags };
         } catch (error) {
-            console.error(`${error.message}`);
+            console.error('Error in postService.createPost:', error);
             throw error;
         }
     },

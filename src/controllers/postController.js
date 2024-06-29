@@ -5,19 +5,30 @@ const postController = {
     async createPost(req, res) {
         const { title, description, content, type, sport, created_by, updated_by } = req.body;
         const files = req.files;
-        const created_by_number = parseInt(created_by);
-        const updated_by_number = parseInt(updated_by);
+        let tags = req.body.tags;
     
         if (!files || files.length === 0) {
             return res.status(400).json({ error: 'Imagem para capa do post é obrigatória' });
         }
-    
+
+        if (typeof tags === 'string') {
+            try {
+                tags = JSON.parse(tags);
+            } catch (error) {
+                return res.status(400).json({ error: 'Formato de tags inválido' });
+            }
+        }
+
+        if (!Array.isArray(tags)) {
+            return res.status(400).json({ error: 'Tags devem ser uma lista' });
+        }
+
         const filenames = files.map(file => file.filename);
         const banner = filenames[0];
         const additionalImages = filenames.slice(1);
 
         try {
-            const newPost = await postService.createPost(title, banner, description, content, type, sport, created_by_number, updated_by_number, additionalImages);
+            const newPost = await postService.createPost(title, banner, description, content, type, sport, parseInt(created_by), parseInt(updated_by), tags, additionalImages);
             res.status(201).json(newPost);
         } catch (error) {
             console.error(`${error.message}`);
@@ -55,7 +66,7 @@ const postController = {
             res.status(200).json(post);
         } catch (error) {
             console.error(`${error.message}`);
-            res.status(500).json({ error: 'erro ao tentar buscar receita' });
+            res.status(500).json({ error: 'erro ao tentar buscar post' });
         }
     },
 
