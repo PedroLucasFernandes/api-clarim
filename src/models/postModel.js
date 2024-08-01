@@ -24,7 +24,7 @@ const postModel = {
                     values: [post.id, img, false]
                 }))
             ];
-    
+
             const imageResults = await Promise.all(imageQueries.map(q => client.query(q)));
             const images = imageResults.map(result => result.rows[0]);
     
@@ -120,13 +120,32 @@ const postModel = {
         }
     },
 
-    async updatePost(id, title, image_path, description, content, type, sport, updated_by) {
-        const query = `UPDATE post SET title = $1, description = $2, content = $3, type = $4, sport = $5 updated_at = CURRENT_TIMESTAMP, updated_by = $6 WHERE id = $7 RETURNING *`;
-        const values = [title, description, content, type, sport, updated_by, id];
-
+    async updatePost(id, title, description, content, type, sport, updated_by) {
+        const getCurrentPostQuery = 'SELECT * FROM post WHERE id = $1';
         try {
-            const { rows } = await pool.query(query, values);
-            if(rows.length === 0) {
+            const currentPostResult = await pool.query(getCurrentPostQuery, [id]);
+            if (currentPostResult.rows.length === 0) {
+                throw new Error(`nenhum post encontrado com o id ${id}`);
+            }
+            const currentPost = currentPostResult.rows[0];
+
+            const updatedTitle = title !== undefined ? title : currentPost.title;
+            const updatedDescription = description !== undefined ? description : currentPost.description;
+            const updatedContent = content !== undefined ? content : currentPost.content;
+            const updatedType = type !== undefined ? type : currentPost.type;
+            const updatedSport = sport !== undefined ? sport : currentPost.sport;
+    
+            const updateValues = [updatedTitle, updatedDescription, updatedContent, updatedType, updatedSport, updated_by, id];
+
+            const updateQuery = `
+                UPDATE post
+                SET title = $1, description = $2, content = $3, type = $4, sport = $5, updated_at = CURRENT_TIMESTAMP, updated_by = $6
+                WHERE id = $7
+                RETURNING *
+            `;
+    
+            const { rows } = await pool.query(updateQuery, updateValues);
+            if (rows.length === 0) {
                 throw new Error(`nenhum post encontrado com o id ${id}`);
             }
             return rows[0];
@@ -134,7 +153,7 @@ const postModel = {
             console.error(`${error.message}`);
             throw error;
         }
-    },
+    },    
 
     async deletePost(id) {
         const query = `DELETE FROM post WHERE id = $1 RETURNING *`;

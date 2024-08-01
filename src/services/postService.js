@@ -48,14 +48,14 @@ const postService = {
         }
     },
 
-    async updatePost(id, title, image_path, description, content, type, sport, updated_by) {
+    async updatePost(id, title, description, content, type, sport, updated_by) {
         try {
             const existingPost = await postModel.getPostById(id);
             if(!existingPost) {
                 throw new Error(`service: nenhum post encontradao com o id ${id}`);
             }
 
-            const updatedPost = await postModel.updatePost(id, title, image_path, description, content, type, sport, updated_by);
+            const updatedPost = await postModel.updatePost(id, title, description, content, type, sport, updated_by);
             return updatedPost;
         } catch (error) {
             console.error(`${error.message}`);

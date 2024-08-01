@@ -82,7 +82,7 @@ const postController = {
             const oldPost = await postService.getPostById(id_number);
             const banner = file?.[0]?.filename || oldPost.image_path;
             
-            const updatedPost = await postService.updatePost(id_number, title, banner, description, content, type, sport, updated_by_number);
+            const updatedPost = await postService.updatePost(id_number, title, description, content, type, sport, updated_by_number);
 
             if (updatedPost.image_path !== oldPost.image_path && fs.existsSync(`src/public/uploads/${oldPost.image_path}`)) {
                 try {

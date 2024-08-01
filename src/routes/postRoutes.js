@@ -20,7 +20,7 @@ router.get('/', postController.getPost);
 router.get('/:id', postController.getPostById);
 
 router.post('/', upload.array("file"), postController.createPost);
-router.put('/:id', upload.array("file"), postController.updatePost);
+router.patch('/:id', upload.array("file"), postController.updatePost);
 router.delete('/:id', postController.deletePost);
 
 module.exports = router;
