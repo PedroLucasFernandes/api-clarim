@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource psql {
+    provider    =   "postgresql"
+    url         =   env("DATABASE_URL")
+}
+
+enum UserType {
+    WRITER
+    EDITOR
+    ADMIN
+}
+
+enum PostCategory {
+    NEWS
+    REVIEW
+    INTERVIEW
+    OPINION
+    CURIOSITY
+    QUIZ
+    ESPORT
+}
+
+enum PlatformType {
+    PLAYSTATION
+    XBOX
+    PC
+    NINTENDO
+    MOBILE
+}
+
+model User {
+    id String @id @default(uuid())
+    name String @psql.VarChar(100)
+    login String @unique @psql.VarChar(100)
+    password String @psql.VarChar(100)
+    image String @psql.Text
+    type UserType @default(WRITER)
+    createdPost Post[] @relation(name: "CreatedPostByUser")
+    updatedPost Post[] @relation(name: "UpdatedPostByUser")
+    description String @psql.Text
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isActive Boolean @default(true)
+    @@map("pc_user")
+}
+
+
+model Post {
+    id String @id @default(uuid())
+    title String @psql.VarChar(100)
+    description String @psql.VarChar(300)
+    content String @psql.Text
+
+    isApproved Boolean @default(false)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    category PostCategory @default(NEWS)
+    platform PlatformType[]
+
+    createdByUser User @relation(fields: [createdBy], references: [id], name: "CreatedPostByUser") 
+    createdBy String
+    updatedByUser User? @relation(fields: [updatedBy], references: [id], name: "UpdatedPostByUser")
+    updatedBy String?
+    tags Tag[] 
+    isActive Boolean @default(true)
+
+    @@map("pc_post")
+}
+
+model Tag {
+    id String @id @default(uuid())
+    name String @psql.VarChar(32)
+    posts Post[]
+    @@map("pc_tag")
+}

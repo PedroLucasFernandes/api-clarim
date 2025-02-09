@@ -1,0 +1,35 @@
+services:
+  clarim.api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DB_HOST=mysql_db
+      - DB_PORT=3307
+      - DB_USERNAME=root
+      - DB_PASSWORD=0804
+      - DB_NAME=clarim
+      - IMGS_PATH=./images
+      - ADMIN_PATH=./admin
+      - PASSWORD_ROUNDS=10
+    volumes:
+      - ./src:/usr/src/app/src
+    depends_on:
+      - mysql_db
+  psql.db:
+    container_name: clarim.db
+    restart: always
+    image: mysql 
+    ports:
+      - "3307:3307"
+    environment:
+      - MYSQL_ROOT_PASSWORD=0804
+      - MYSQL_DATABASE=clarim
+      - MYSQL_USER=ricardo
+      - MYSQL_PASSWORD=0804
+      - MYSQL_TCP_PORT=3307
+    volumes:
+      - ./dumps:/docker-entrypoint-initdb.d:z
